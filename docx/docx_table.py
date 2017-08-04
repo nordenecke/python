@@ -1,62 +1,58 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jul 15 21:58:21 2017
+Created on Fri Jul 28 19:54:04 2017
 
 @author: norden
 """
 
 import os
-import word_content_structure
+
 from docx import Document
-#from docx.shared import Pt
-#from docx.shared import Inches
-#from docx.oxml.ns import qn
-
-
 
 import winreg
+
 def get_desktop():
     key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,\
                           r'Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders',)
     return winreg.QueryValueEx(key, "Desktop")[0]
 
 
-words_list=[]
-c_lst=[]
-
-output_column_number=3
-output_row_number=5
+def print_all(module_):
+  modulelist = dir(module_)
+  length = len(modulelist)
+  for i in range(0,length,1):
+    print(getattr(module_,modulelist[i]))
 
 def main():
-#    print("This is get_word_list main function!")
-#    print(get_word_list("words.txt"))
-    c_lst.append(word_content_structure.word_content("111","bbb","ccc"))
-    c_lst.append(word_content_structure.word_content("222","bbb","ccc"))
-    put_content("words_content.txt",c_lst)
+    get_docx("card.docx")
+    put_docx("card_output.docx")
 
-
-def get_word_list(filename):
+def get_docx(filename):
     desktop_path=get_desktop()
-    with open(desktop_path+"\\"+filename,"r") as words_src:
-        for line in words_src:
-            words_list.append(line.strip())
-#            print(line.strip())
-#        print(words_list)
-        return words_list
+    if True==os.path.exists(desktop_path+"\\"+filename):
+        doc=Document(desktop_path+"\\"+filename)
+    tabs = doc.tables
+    for t in tabs:
+        print("table.alignment=%s" % t.alignment)
+        print("table.autofit=%s" % t.autofit)
+        print("table.style=%s" % t.style)
+        print("table.table_direction=%s" % t.table_direction)
 
-def put_content(filename, content_list):
-    with open(filename,"w+") as content_dst:
-        content_dst.truncate()
-        for i in range(len(content_list)):
-            content_dst.write(content_list[i].word+"\n")
-            content_dst.write(content_list[i].phonetic_symbol+"\n")
-            content_dst.write(content_list[i].paraphrase+"\n")
-            content_dst.write("***************************\n")
-        return True
+        rows=t.rows
+#        print("rows.height=%d"%rows.height)
+        for r in rows:
+#            print("row.height=%d"%r._tr.Height_val)
+#            print(r._tr)
+#            print("row.height_rule=%s"%r.height_rule)
+            cs=r.cells
+            for c in cs:
+#                par=c.paragraphs
+#                print("cell.paragraphs=%s"%par[0].runs[0].font.size)
+                print("cell.width=%d"%c.width)
 
-def put_docx(filename,content_list):
-    if len(content_list)==0:
-        return False
+def put_docx(filename):
+    output_column_number=3
+    output_row_number=5
 
     #打开文档
     document = Document()
@@ -108,7 +104,7 @@ def put_docx(filename,content_list):
 #    document.add_picture('image.bmp', width=Inches(1.25))
 
     page_item_number=output_column_number*output_row_number
-    total_input_item_number=len(content_list)
+    total_input_item_number=15
     unused_item_number=total_input_item_number
     current_item=0
 
@@ -116,13 +112,11 @@ def put_docx(filename,content_list):
         #增加表格
         table1 = document.add_table(rows=output_row_number, cols=output_column_number, style='Table Grid')
         table1.autofit = False
-        table1.alignment = 1
         page_first_item=current_item
         for i in range(min(unused_item_number,page_item_number)):
-            first_page_content_item=content_list[current_item].word+"\n"+content_list[current_item].phonetic_symbol
+            first_page_content_item="test"
             hdr_cells = table1.rows[int(i/output_column_number)].cells
             hdr_cells[i%output_column_number].text = first_page_content_item
-            hdr_cells[i%output_column_number].width = 2300000
 #            print(hdr_cells[i%output_column_number].width)
 #            hdr_cells[i%output_column_number].width=1828800*10
             current_item+=1
@@ -133,13 +127,11 @@ def put_docx(filename,content_list):
         #增加表格
         table2 = document.add_table(rows=output_row_number, cols=output_column_number, style='Table Grid')
         table2.autofit = False
-        table2.alignment = 1
         current_item=page_first_item
         for i in range(min(unused_item_number,page_item_number)):
-            second_page_content_item=content_list[current_item].paraphrase
+            second_page_content_item="test"
             hdr_cells = table2.rows[int(i/output_column_number)].cells
             hdr_cells[output_column_number-i%output_column_number-1].text = second_page_content_item
-            hdr_cells[output_column_number-i%output_column_number-1].width = 2300000
             current_item+=1
 
         if unused_item_number -page_item_number<=0:
